@@ -7,7 +7,7 @@
 
 namespace http {
 	void exitWithError(const std::string &errorMessage) {
-		std::cout << errorMessage;
+		std::cout << "Error: " << errorMessage << " Code: " << WSAGetLastError() << '\n';
 	}
 
 	TCPServer::TCPServer()
@@ -63,9 +63,21 @@ namespace http {
 	}
 
 	void TCPServer::acceptConnection() {
-		if (accept(m_socket, NULL, NULL) < 0) {
+		int m_new_socket = accept(m_socket, NULL, NULL);
+		if (m_new_socket < 0) {
 			exitWithError("Socket failed to accept incoming connection");
 		}
+		const int BUFFER_SIZE{ 30720 };
+		char buffer[BUFFER_SIZE]{ 0 };
+		int bytesRecieved = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
+		if (bytesRecieved == 0) {
+			std::cout << "Failed to receive any bytes from client socket connection";
+		}
+		else if(bytesRecieved < 0) {
+			exitWithError("Failed to recieve data");
+		}
+
+		std::cout << buffer;
 	}
 
 	void TCPServer::closeServer() {
