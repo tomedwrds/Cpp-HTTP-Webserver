@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include <fstream>
+
 #pragma comment(lib, "Ws2_32.lib")
 
 namespace http {
@@ -65,38 +67,54 @@ namespace http {
 	}
 
 	void TCPServer::acceptConnection() {
-		int m_new_socket = accept(m_socket, NULL, NULL);
-		if (m_new_socket < 0) {
-			exitWithError("Socket failed to accept incoming connection");
-		}
-		const int BUFFER_SIZE{ 30720 };
-		char buffer[BUFFER_SIZE]{ 0 };
-		int bytesRecieved = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
-		if (bytesRecieved == 0) {
-			std::cout << "Failed to receive any bytes from client socket connection";
-		}
-		else if(bytesRecieved < 0) {
-			exitWithError("Failed to recieve data");
-		}
-		std::string bufferString{ buffer };
-		std::map<std::string, std::string> requestData;
+		while (1) {
+			int m_new_socket = accept(m_socket, NULL, NULL);
+			if (m_new_socket < 0) {
+				exitWithError("Socket failed to accept incoming connection");
+			}
+			const int BUFFER_SIZE{ 30720 };
+			char buffer[BUFFER_SIZE]{ 0 };
+			int bytesRecieved = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
+			if (bytesRecieved == 0) {
+				std::cout << "Failed to receive any bytes from client socket connection";
+			}
+			else if (bytesRecieved < 0) {
+				exitWithError("Failed to recieve data");
+			}
+			std::string bufferString{ buffer };
+			std::map<std::string, std::string> requestData;
 
-		int nextLineBegins = bufferString.find("\r\n");
-		std::cout << bufferString;
-
-		bufferString.erase(0, nextLineBegins + 2);
-
-		while (bufferString != "\r\n") {
-			int colon = bufferString.find(":");
 			int nextLineBegins = bufferString.find("\r\n");
-			requestData.insert(std::make_pair(bufferString.substr(0, colon), bufferString.substr(colon + 2, nextLineBegins - (colon + 2))));
-			bufferString.erase(0, nextLineBegins+2);
+			std::cout << bufferString;
+
+			bufferString.erase(0, nextLineBegins + 2);
+
+			while (bufferString != "\r\n") {
+				int colon = bufferString.find(":");
+				int nextLineBegins = bufferString.find("\r\n");
+				requestData.insert(std::make_pair(bufferString.substr(0, colon), bufferString.substr(colon + 2, nextLineBegins - (colon + 2))));
+				bufferString.erase(0, nextLineBegins + 2);
+
+			}
+
+
+
+			//respond
+			int bytesSent;
+			long totalBytesSent{ 0 };
+			std::ifstream inFile;
+			inFile.open("index.html");
+
+			std::stringstream strStream;
+			strStream << inFile.rdbuf();
+			std::string message = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + strStream.str();
+			while (totalBytesSent < message.size()) {
+				bytesSent = send(m_new_socket, message.c_str(), message.size(), 0);
+				totalBytesSent += bytesSent;
+			}
 
 		}
-		for (auto& kv : requestData) {
-			std::cout << "KEY: `" << kv.first << "`, VALUE: `" << kv.second << '`' << std::endl;
-		}
-
+		
 		
 	}
 
