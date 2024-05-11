@@ -2,7 +2,9 @@
 #include <Winsock2.h>
 #include <iostream>
 #include <ws2tcpip.h>
-
+#include <string>
+#include <map>
+#include <sstream>
 #pragma comment(lib, "Ws2_32.lib")
 
 namespace http {
@@ -76,8 +78,26 @@ namespace http {
 		else if(bytesRecieved < 0) {
 			exitWithError("Failed to recieve data");
 		}
+		std::string bufferString{ buffer };
+		std::map<std::string, std::string> requestData;
 
-		std::cout << buffer;
+		int nextLineBegins = bufferString.find("\r\n");
+		std::cout << bufferString;
+
+		bufferString.erase(0, nextLineBegins + 2);
+
+		while (bufferString != "\r\n") {
+			int colon = bufferString.find(":");
+			int nextLineBegins = bufferString.find("\r\n");
+			requestData.insert(std::make_pair(bufferString.substr(0, colon), bufferString.substr(colon + 2, nextLineBegins - (colon + 2))));
+			bufferString.erase(0, nextLineBegins+2);
+
+		}
+		for (auto& kv : requestData) {
+			std::cout << "KEY: `" << kv.first << "`, VALUE: `" << kv.second << '`' << std::endl;
+		}
+
+		
 	}
 
 	void TCPServer::closeServer() {
