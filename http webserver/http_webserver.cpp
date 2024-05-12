@@ -6,7 +6,7 @@
 #include <map>
 #include <sstream>
 #include <fstream>
-
+#include <thread>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -62,7 +62,7 @@ namespace http {
 
 	void TCPServer::startListen() {
 		SOCKET ClientSocket;
-		if (listen(m_socket, 20) < 0) {
+		if (listen(m_socket, 100) < 0) {
 			exitWithError("Socket listen failed");
 		}
 		std::cout << "Starting listen on 0.0.0.0/80\n";
@@ -77,18 +77,26 @@ namespace http {
 			if (m_new_socket < 0) {
 				exitWithError("Socket failed to accept incoming connection");
 			}
+			std::cout << "Connection made\n";
 
 			//Receive data on incoming conection
 			const int BUFFER_SIZE{ 1024 };
 			char buffer[BUFFER_SIZE]{ 0 };
-			int bytesRecieved = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
+
+			int bytesRecieved{ recv(m_new_socket, buffer, BUFFER_SIZE, 0) };
+			std::cout << bytesRecieved;
 			if (bytesRecieved < 0) {
 				exitWithError("Failed to recieved any bytes from client due to error.");
 			}
-
+			else if(bytesRecieved == 0) {
+				std::cout << WSAGetLastError();
+			}
+			std::cout << buffer;
 			//Parse response
 			std::string bufferString{ buffer };
 			std::string requestFile{ parseResponse(bufferString) };
+			
+			std::cout << "Request made for " << requestFile << '\n';
 
 			//check if request is malformed
 			try {
@@ -98,6 +106,7 @@ namespace http {
 				sendResponse("HTTP/1.1 400 Bad Request");
 
 			}
+			shutdown(m_new_socket, SD_SEND);
 			closesocket(m_new_socket);
 
 		}
@@ -110,7 +119,6 @@ namespace http {
 		//go foward from dash to get path
 		int startIndex{ 5 };
 		int i{ 0 };
-		std::cout << buffer;
 		while (buffer.at(startIndex + i) != ' ') {
 			i++;
 		}
@@ -150,6 +158,8 @@ namespace http {
 				totalBytesSent += bytesSent;
 			}
 		}
+		std::cout << totalBytesSent << " bytes sent\n";
+
 	}
 
 
