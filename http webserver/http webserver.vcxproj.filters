@@ -31,5 +31,8 @@
     <None Include="index.html">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="page1.html">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

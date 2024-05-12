@@ -18,6 +18,9 @@ namespace http {
 		int startServer();
 		void closeServer();
 		std::string parseResponse(const std::string &);
+		void sendResponse(const std::string &);
+		void sendFile(const std::string&);
+
 		
 	};
 }
