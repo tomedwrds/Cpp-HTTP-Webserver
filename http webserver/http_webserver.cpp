@@ -114,6 +114,7 @@ namespace http {
 				bytesSent = send(m_new_socket, message.c_str(), message.size(), 0);
 				totalBytesSent += bytesSent;
 			}
+			closesocket(m_new_socket);
 
 		}
 		
