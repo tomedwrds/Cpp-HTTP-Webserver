@@ -76,18 +76,20 @@ namespace http {
 			char buffer[BUFFER_SIZE]{ 0 };
 			int bytesRecieved = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
 			if (bytesRecieved == 0) {
-				std::cout << "Failed to receive any bytes from client socket connection";
+				exitWithError("Failed to receive any bytes from client socket connection");
 			}
 			else if (bytesRecieved < 0) {
-				exitWithError("Failed to recieve data");
+				exitWithError("Failed to recieved any bytes from client due to error.");
 			}
+
 			std::string bufferString{ buffer };
-			std::map<std::string, std::string> requestData;
+			std::string requestFile{ parseResponse(bufferString) };
+			//std::map<std::string, std::string> requestData;
 
-			int nextLineBegins = bufferString.find("\r\n");
-			std::cout << bufferString;
 
-			bufferString.erase(0, nextLineBegins + 2);
+			//int nextLineBegins = bufferString.find("\r\n");
+
+			/*bufferString.erase(0, nextLineBegins + 2);
 
 			while (bufferString != "\r\n") {
 				int colon = bufferString.find(":");
@@ -95,15 +97,15 @@ namespace http {
 				requestData.insert(std::make_pair(bufferString.substr(0, colon), bufferString.substr(colon + 2, nextLineBegins - (colon + 2))));
 				bufferString.erase(0, nextLineBegins + 2);
 
-			}
+			}*/
 
-
+			std::cout << requestFile;
 
 			//respond
 			int bytesSent;
 			long totalBytesSent{ 0 };
 			std::ifstream inFile;
-			inFile.open("index.html");
+			inFile.open(requestFile);
 
 			std::stringstream strStream;
 			strStream << inFile.rdbuf();
@@ -117,6 +119,18 @@ namespace http {
 		
 		
 	}
+
+	std::string TCPServer::parseResponse(const std::string &buffer) {
+		//go foward from dash to get path
+		int startIndex{5};
+		int i{ 0 };
+		while (buffer.at(startIndex + i) != ' ') {
+			i++;
+		}
+		//return the file path
+		return buffer.substr(startIndex, i);
+	}
+
 
 	void TCPServer::closeServer() {
 		closesocket(m_socket);

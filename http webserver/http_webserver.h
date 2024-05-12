@@ -17,6 +17,7 @@ namespace http {
 
 		int startServer();
 		void closeServer();
+		std::string parseResponse(const std::string &);
 		
 	};
 }
